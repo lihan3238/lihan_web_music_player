@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>我的音乐播放器</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+    <div class="player">
+        <h1>🎶 我的音乐播放器</h1>
+        <audio id="audio" controls></audio>
+
+        <!-- 播放控制区 -->
+        <div class="controls">
+            <button onclick="prevSong()" title="上一首">⏮</button>
+            <button onclick="togglePlay()" id="playBtn" title="播放/暂停">▶</button>
+            <button onclick="nextSong()" title="下一首">⏭</button>
+
+            <!-- 播放模式选择 -->
+            <select id="mode" onchange="changeMode(this.value)">
+                <option value="order">顺序播放</option>
+                <option value="single">单曲循环</option>
+                <option value="shuffle">随机播放</option>
+            </select>
+
+            <!-- 音量控制 -->
+            <input type="range" id="volume" min="0" max="1" step="0.05" value="1">
+        </div>
+
+        <!-- 歌单 -->
+        <ul id="playlist" class="playlist"></ul>
+    </div>
+
+    <!-- 底部浮动字幕 -->
+    <div id="lyrics" class="lyrics"></div>
+
+    <script>
+        let audio = document.getElementById("audio");
+        let playlist = document.getElementById("playlist");
+        let lyricsBox = document.getElementById("lyrics");
+        let playBtn = document.getElementById("playBtn");
+
+        let songs = [];
+        let current = 0;
+        let mode = "order"; // order, single, shuffle
+        let lyrics = [];
+        let currentItem = null;
+
+        async function loadSongs() {
+            let res = await fetch("/api/songs");
+            songs = await res.json();
+            playlist.innerHTML = "";
+            songs.forEach((s, i) => {
+                let li = document.createElement("li");
+                li.textContent = s.title;
+                li.onclick = () => playSong(i);
+                playlist.appendChild(li);
+            });
+            if (songs.length > 0) playSong(0);
+        }
+
+        async function playSong(index) {
+            current = index;
+            audio.src = songs[current].file;
+            await loadLyrics(songs[current].lrc);
+            audio.play();
+
+            // 播放按钮状态
+            playBtn.textContent = "⏸";
+
+            // 高亮当前歌曲
+            if (currentItem) currentItem.classList.remove("active");
+            let newItem = playlist.children[current];
+            newItem.classList.add("active");
+            currentItem = newItem;
+
+            // 自动滚动到可见区域
+            newItem.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+
+        async function loadLyrics(url) {
+            try {
+                let res = await fetch(url);
+                let text = await res.text();
+                lyrics = parseLRC(text);
+            } catch (e) {
+                lyrics = [];
+            }
+        }
+
+        function parseLRC(text) {
+            let lines = text.split("\n");
+            let result = [];
+            let regex = /\[(\d+):(\d+)(?:\.(\d+))?\](.*)/;
+            lines.forEach(line => {
+                let m = regex.exec(line);
+                if (m) {
+                    let t = parseInt(m[1]) * 60 + parseInt(m[2]);
+                    result.push({ time: t, text: m[4].trim() });
+                }
+            });
+            return result;
+        }
+
+        audio.ontimeupdate = () => {
+            let t = Math.floor(audio.currentTime);
+            let line = lyrics.findLast(l => l.time <= t);
+            if (line) lyricsBox.textContent = line.text;
+        };
+
+        audio.onplay = () => playBtn.textContent = "⏸";
+        audio.onpause = () => playBtn.textContent = "▶";
+
+        audio.onended = () => {
+            if (mode === "order") nextSong();
+            else if (mode === "single") playSong(current);
+            else if (mode === "shuffle") playSong(Math.floor(Math.random() * songs.length));
+        };
+
+        function togglePlay() { audio.paused ? audio.play() : audio.pause(); }
+        function prevSong() { playSong((current - 1 + songs.length) % songs.length); }
+        function nextSong() { playSong((current + 1) % songs.length); }
+        function changeMode(m) { mode = m; }
+
+        document.getElementById("volume").oninput = e => audio.volume = e.target.value;
+
+        loadSongs();
+    </script>
+</body>
+
+</html>

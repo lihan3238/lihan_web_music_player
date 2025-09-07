@@ -1,0 +1,173 @@
+body {
+    margin: 0;
+    background: linear-gradient(135deg, #1e1e1e, #121212);
+    color: #fff;
+    font-family: "Segoe UI", sans-serif;
+    text-align: center;
+}
+
+.player {
+    margin: 30px auto;
+    width: 420px;
+    background: rgba(30, 30, 30, 0.95);
+    padding: 20px;
+    border-radius: 20px;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.6);
+}
+
+/* 播放控制区整体布局 */
+.controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin: 20px 0;
+}
+
+/* 按钮基础样式 */
+.controls button {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    background: #2b2b2b;
+    color: #ddd;
+    font-size: 20px;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* 鼠标悬停效果 */
+.controls button:hover {
+    background: #444;
+    color: #ffcc00;
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(255, 204, 0, 0.4);
+}
+
+/* 点击瞬间效果 */
+.controls button:active {
+    background: #666;
+    transform: scale(0.95);
+}
+
+/* 当前激活按钮（比如循环播放启用时） */
+.controls button.active {
+    background: #ffcc00;
+    color: #222;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(255, 204, 0, 0.6);
+}
+
+/* 播放模式下拉框美化 */
+.controls select {
+    padding: 6px 10px;
+    border-radius: 10px;
+    border: none;
+    outline: none;
+    background: #2b2b2b;
+    color: #ddd;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.controls select:hover {
+    background: #444;
+    color: #ffcc00;
+}
+
+/* 下拉选项 */
+.controls select option {
+    background: #1e1e1e;
+    color: #fff;
+}
+
+
+.playlist {
+    margin-top: 20px;
+    list-style: none;
+    padding: 0;
+    max-height: 250px;
+    /* 固定高度 */
+    overflow-y: auto;
+    /* 只允许上下滚动 */
+    overflow-x: hidden;
+    /* 禁止横向滚动条 */
+    border-top: 1px solid #444;
+}
+
+/* 歌单滚动条美化（WebKit 内核 Chrome/Edge/Safari 生效） */
+.playlist::-webkit-scrollbar {
+    width: 8px;
+    /* 滚动条宽度 */
+}
+
+.playlist::-webkit-scrollbar-track {
+    background: #1e1e1e;
+    /* 滚动条轨道颜色 */
+    border-radius: 10px;
+}
+
+.playlist::-webkit-scrollbar-thumb {
+    background: #555;
+    /* 滚动条拖动块颜色 */
+    border-radius: 10px;
+}
+
+.playlist::-webkit-scrollbar-thumb:hover {
+    background: #777;
+    /* 悬停时更亮 */
+}
+
+/* Firefox 滚动条美化 */
+.playlist {
+    scrollbar-width: thin;
+    /* 窄滚动条 */
+    scrollbar-color: #555 #1e1e1e;
+}
+
+/* 歌单默认样式 */
+.playlist li {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #333;
+    transition: all 0.2s ease;
+}
+
+/* 鼠标悬停时突出 */
+.playlist li:hover {
+    background: #2a2a2a;
+    transform: scale(1.02);
+    color: #ffdd55;
+}
+
+/* 当前播放高亮 */
+.playlist li.active {
+    background: linear-gradient(90deg, #444, #666);
+    font-weight: bold;
+    color: #ffcc00;
+    transform: scale(1.03);
+    border-left: 4px solid #ffcc00;
+}
+
+/* 点击瞬间反馈 */
+.playlist li:active {
+    background: #777;
+    transform: scale(0.98);
+}
+
+
+/* 底部浮动歌词字幕 */
+.lyrics {
+    position: fixed;
+    bottom: 8%;
+    width: 100%;
+    text-align: center;
+    font-size: 26px;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.95);
+    text-shadow: 2px 2px 6px #000;
+    pointer-events: none;
+}
