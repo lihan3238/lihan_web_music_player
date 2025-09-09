@@ -13,7 +13,6 @@ import (
 func main() {
 	r := gin.Default()
 	r.Static("/static", "./static")
-	r.Static("/music", "./music")
 	r.LoadHTMLGlob("templates/*")
 
 	// 首页
@@ -66,6 +65,18 @@ func main() {
 			return
 		}
 		c.String(200, string(content))
+	})
+
+	// ✅ 音乐文件接口：支持缓存 + 断点续传
+	r.GET("/music/:file", func(c *gin.Context) {
+		file := c.Param("file")
+		path := filepath.Join("music", file)
+
+		// 设置缓存头（浏览器下次直接用缓存）
+		c.Header("Cache-Control", "public, max-age=86400")
+
+		// 交给 net/http 处理，支持 Range 请求（断点续传）
+		http.ServeFile(c.Writer, c.Request, path)
 	})
 
 	r.Run(":8080")
