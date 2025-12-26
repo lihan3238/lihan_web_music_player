@@ -34,8 +34,9 @@ go mod tidy
 
 * 将音乐文件放到 `music/` 文件夹
 * 对应歌词文件命名格式为 `歌曲名.lrc`，放在同目录
+* 也可以使用 `mklink /D [path]\lihan_web_music_player\musics \path\to\your\music\folder` 创建符号链接（Windows），将 `musics/` 指向你的本地音乐文件夹
 
-4. 运行服务
+1. 运行服务
 
 ```bash
 go run main.go
@@ -66,6 +67,7 @@ lihan_web_music_player/
 │  ├─ style.css      # 样式文件
 │  └─ cover.png      # 封面截图
 ├─ music/            # 本地音乐文件夹（.gitignore 忽略）
+├─ musics/           # 本地音乐文件夹（.gitignore 忽略）
 └─ README.md
 ```
 
