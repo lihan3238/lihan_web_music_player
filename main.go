@@ -12,13 +12,26 @@ import (
 	"golang.org/x/net/html/charset"
 )
 
-// 🎵 多音乐目录（并集）
-var musicDirs = []string{
-	"./music",
-	"./musics",
-}
+// 🎵 多音乐目录（并集）——基于 exe 目录
+var musicDirs []string
 
 func main() {
+	// ========= 获取 exe 所在目录 =========
+	exePath, err := os.Executable()
+	if err != nil {
+		panic(err)
+	}
+	exeDir := filepath.Dir(exePath)
+
+	// ========= 初始化资源路径 =========
+	musicDirs = []string{
+		filepath.Join(exeDir, "music"),
+		filepath.Join(exeDir, "musics"),
+	}
+
+	staticDir := filepath.Join(exeDir, "static")
+	templateDir := filepath.Join(exeDir, "templates", "*")
+
 	// ========= 端口配置（参数 > 环境变量 > 默认） =========
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -29,8 +42,8 @@ func main() {
 
 	// ========= Gin 初始化 =========
 	r := gin.Default()
-	r.Static("/static", "./static")
-	r.LoadHTMLGlob("templates/*")
+	r.Static("/static", staticDir)
+	r.LoadHTMLGlob(templateDir)
 
 	// ========= 首页 =========
 	r.GET("/", func(c *gin.Context) {
@@ -73,7 +86,7 @@ func main() {
 		c.JSON(http.StatusOK, songs)
 	})
 
-	// ========= 获取歌词（自动 UTF-8） =========
+	// ========= 获取歌词 =========
 	r.GET("/api/lyrics/:name", func(c *gin.Context) {
 		name := c.Param("name")
 
@@ -93,7 +106,7 @@ func main() {
 		c.String(http.StatusOK, string(content))
 	})
 
-	// ========= 音乐文件服务（支持 Range / 缓存） =========
+	// ========= 音乐文件服务 =========
 	r.GET("/music/:file", func(c *gin.Context) {
 		file := c.Param("file")
 
