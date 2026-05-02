@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>我的音乐播放器</title>
-  <link rel="stylesheet" href="static/style.css">
+  <link rel="stylesheet" href="{{ .BasePath }}/static/style.css">
 </head>
-<body>
+<body data-base-path="{{ .BasePath }}">
   <div class="player">
     <h1>我的音乐播放器</h1>
     <audio id="audio" controls preload="metadata"></audio>
@@ -35,6 +35,12 @@
     const playlist = document.getElementById("playlist");
     const lyricsBox = document.getElementById("lyrics");
     const playBtn = document.getElementById("playBtn");
+    const basePath = document.body.dataset.basePath || "";
+
+    function appUrl(path) {
+      if (!basePath) return path;
+      return `${basePath}/${path.replace(/^\/+/, "")}`;
+    }
 
     let songs = [];
     let current = 0;
@@ -43,7 +49,7 @@
     let currentItem = null;
 
     async function loadSongs() {
-      const res = await fetch("api/songs");
+      const res = await fetch(appUrl("api/songs"));
       songs = await res.json();
       playlist.innerHTML = "";
       songs.forEach((song, index) => {
@@ -61,8 +67,8 @@
 
     async function playSong(index, autoplay = true) {
       current = index;
-      audio.src = songs[current].file;
-      await loadLyrics(songs[current].lrc);
+      audio.src = appUrl(songs[current].file);
+      await loadLyrics(appUrl(songs[current].lrc));
       if (autoplay) {
         await audio.play();
       }
