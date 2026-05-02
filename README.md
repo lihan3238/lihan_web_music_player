@@ -1,6 +1,6 @@
 # lihan_web_music_player
 
-[![OpenToolHub v3](https://img.shields.io/badge/OpenToolHub-v3-2563eb?logo=github&labelColor=111827)](https://github.com/lihan3238/OpenToolHub/blob/develop/docs/developer_tool_guide_zh.md)
+[![OpenToolHub v3](https://img.shields.io/badge/OpenToolHub-v3-2563eb?logo=gitee&labelColor=111827)](https://gitee.com/lihan3238/OpenToolHub/blob/develop/docs/developer_tool_guide_zh.md)
 
 一个基于 Go + Gin 的本地音乐播放器，支持本地曲库、歌词显示、音频 Range 请求，并可作为 OpenToolHub Tool Protocol v3 的真实 WEB_APP 验收工具运行。
 
