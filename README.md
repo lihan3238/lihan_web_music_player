@@ -1,5 +1,7 @@
 # lihan_web_music_player
 
+[![OpenToolHub v3](https://img.shields.io/badge/OpenToolHub-v3-2563eb?logo=github&labelColor=111827)](https://github.com/lihan3238/OpenToolHub/blob/develop/docs/developer_tool_guide_zh.md)
+
 一个基于 Go + Gin 的本地音乐播放器，支持本地曲库、歌词显示、音频 Range 请求，并可作为 OpenToolHub Tool Protocol v3 的真实 WEB_APP 验收工具运行。
 
 ## 功能
@@ -13,6 +15,7 @@
 - 支持两种运行模式：
   - `standalone`：原始独立播放器模式，可直接访问
   - `toolbox`：OpenToolHub 接入模式，业务页面、API、静态资源和音乐资源需要平台 JWT 才能访问
+- 已通过 `opentoolhub.tool.v3` WEB_APP 接入验证，可作为真实外部项目接入样例
 
 ## 快速开始
 
@@ -82,6 +85,8 @@ PORT=9000 go run .
 
 本项目可以作为 OpenToolHub 的真实 WEB_APP 工具运行，用来验证平台的 v3 协议能力。
 
+上方 Badge 表示本项目支持 `opentoolhub.tool.v3`。它是静态展示标识，不代表实时运行状态；只有实际实现协议并通过 OpenToolHub 校验的项目才建议添加。
+
 ### 协议端点
 
 公开端点：
@@ -100,6 +105,7 @@ GET /meta
 - `source.deploy`
 - `auth.type: platform_jwt`
 - `validation.web_probe_paths`
+- `web_entry_url: /`
 
 toolbox 模式下受保护端点：
 
@@ -123,7 +129,7 @@ $env:OPENTOOLHUB_MODE="toolbox"
 $env:OPENTOOLHUB_TOOL_ID="<OpenToolHub 中的工具 ID>"
 $env:OPENTOOLHUB_ISSUER="opentoolhub"
 $env:OPENTOOLHUB_AUDIENCE="opentoolhub-runtime"
-$env:OPENTOOLHUB_JWT_SECRET="<与 OpenToolHub RUNTIME_JWT_SECRET 一致的密钥>"
+$env:RUNTIME_JWT_SECRET="<与 OpenToolHub RUNTIME_JWT_SECRET 一致的密钥>"
 $env:MUSIC_DIR="C:\lihan_work\github_repos\music\musics"
 go run .
 ```
@@ -136,10 +142,24 @@ OPENTOOLHUB_MODE=toolbox \
 OPENTOOLHUB_TOOL_ID="<OpenToolHub 中的工具 ID>" \
 OPENTOOLHUB_ISSUER=opentoolhub \
 OPENTOOLHUB_AUDIENCE=opentoolhub-runtime \
-OPENTOOLHUB_JWT_SECRET="<与 OpenToolHub RUNTIME_JWT_SECRET 一致的密钥>" \
+RUNTIME_JWT_SECRET="<与 OpenToolHub RUNTIME_JWT_SECRET 一致的密钥>" \
 MUSIC_DIR=/mnt/c/lihan_work/github_repos/music/musics \
 go run .
 ```
+
+兼容说明：代码仍支持旧变量 `OPENTOOLHUB_JWT_SECRET`，但推荐使用 OpenToolHub 文档中的标准变量名 `RUNTIME_JWT_SECRET`。
+
+### 配置项
+
+| 变量 | 说明 | 示例 |
+|------|------|------|
+| `PORT` | runtime 监听端口 | `18080` |
+| `OPENTOOLHUB_MODE` | `standalone` 或 `toolbox` | `toolbox` |
+| `OPENTOOLHUB_TOOL_ID` | OpenToolHub 创建出的工具 ID | `cmo...` |
+| `OPENTOOLHUB_ISSUER` | runtime JWT issuer | `opentoolhub` |
+| `OPENTOOLHUB_AUDIENCE` | runtime JWT audience | `opentoolhub-runtime` |
+| `RUNTIME_JWT_SECRET` | 与 OpenToolHub 一致的 runtime JWT 密钥 | `<strong-secret>` |
+| `MUSIC_DIR` | 外部曲库目录，可配置多个 | `C:\lihan_work\github_repos\music\musics` |
 
 ### OpenToolHub 登记信息
 
@@ -150,8 +170,16 @@ go run .
 Runtime URL：http://localhost:18080
 源码仓库：https://github.com/lihan3238/lihan_web_music_player
 许可证：MIT
-部署说明：使用 OPENTOOLHUB_MODE=toolbox 启动，并配置 MUSIC_DIR 与 OPENTOOLHUB_JWT_SECRET
+部署说明：使用 OPENTOOLHUB_MODE=toolbox 启动，并配置 MUSIC_DIR 与 RUNTIME_JWT_SECRET
 ```
+
+如果 OpenToolHub 运行在 WSL，而本项目 runtime 运行在 Windows PowerShell，不要在 OpenToolHub 中填写 `localhost`。应填写 WSL 可访问的 Windows host IP，例如：
+
+```text
+http://172.23.80.1:18080
+```
+
+可在 WSL 中通过 `cat /etc/resolv.conf` 查看 nameserver 作为 Windows host IP 参考。
 
 完成校验和激活后，从 OpenToolHub 市场详情页打开工具。浏览器 URL 应保持在 OpenToolHub 站内，例如：
 
@@ -173,6 +201,15 @@ toolbox 模式下建议额外验证：
 - 无 token 请求 `/api/songs` 应失败
 - 带 OpenToolHub runtime JWT 请求 `/api/songs` 应成功
 - 带 `Range: bytes=0-3` 请求 `/music/:file` 应返回 `206 Partial Content`
+
+从 OpenToolHub 完整验证：
+
+1. 启动 OpenToolHub。
+2. 启动本项目 toolbox runtime。
+3. 在 OpenToolHub 开发者中心创建 `WEB_APP` 工具并填写 runtime URL、源码仓库、许可证、部署说明。
+4. 校验并激活工具。
+5. 从工具市场详情页打开 `/tools/<tool-id>/app`。
+6. 确认歌曲列表、歌词和音频播放都通过 OpenToolHub 站内 URL 加载。
 
 ## 项目结构
 
