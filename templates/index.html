@@ -1,133 +1,127 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
-    <meta charset="UTF-8">
-    <title>我的音乐播放器</title>
-    <link rel="stylesheet" href="/static/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lihan Web Music Player</title>
+  <link rel="stylesheet" href="static/style.css">
 </head>
-
 <body>
-    <div class="player">
-        <h1>🎶 我的音乐播放器</h1>
-        <audio id="audio" controls></audio>
+  <div class="player">
+    <h1>Lihan Web Music Player</h1>
+    <audio id="audio" controls preload="metadata"></audio>
 
-        <!-- 播放控制区 -->
-        <div class="controls">
-            <button onclick="prevSong()" title="上一首">⏮</button>
-            <button onclick="togglePlay()" id="playBtn" title="播放/暂停">▶</button>
-            <button onclick="nextSong()" title="下一首">⏭</button>
+    <div class="controls">
+      <button onclick="prevSong()" title="Previous">Prev</button>
+      <button onclick="togglePlay()" id="playBtn" title="Play/Pause">Play</button>
+      <button onclick="nextSong()" title="Next">Next</button>
 
-            <!-- 播放模式选择 -->
-            <select id="mode" onchange="changeMode(this.value)">
-                <option value="order">顺序播放</option>
-                <option value="single">单曲循环</option>
-                <option value="shuffle">随机播放</option>
-            </select>
+      <select id="mode" onchange="changeMode(this.value)">
+        <option value="order">Order</option>
+        <option value="single">Single</option>
+        <option value="shuffle">Shuffle</option>
+      </select>
 
-            <!-- 音量控制 -->
-            <input type="range" id="volume" min="0" max="1" step="0.05" value="1">
-        </div>
-
-        <!-- 歌单 -->
-        <ul id="playlist" class="playlist"></ul>
+      <input type="range" id="volume" min="0" max="1" step="0.05" value="1">
     </div>
 
-    <!-- 底部浮动字幕 -->
-    <div id="lyrics" class="lyrics"></div>
+    <ul id="playlist" class="playlist"></ul>
+  </div>
 
-    <script>
-        let audio = document.getElementById("audio");
-        let playlist = document.getElementById("playlist");
-        let lyricsBox = document.getElementById("lyrics");
-        let playBtn = document.getElementById("playBtn");
+  <div id="lyrics" class="lyrics"></div>
 
-        let songs = [];
-        let current = 0;
-        let mode = "order"; // order, single, shuffle
-        let lyrics = [];
-        let currentItem = null;
+  <script>
+    const audio = document.getElementById("audio");
+    const playlist = document.getElementById("playlist");
+    const lyricsBox = document.getElementById("lyrics");
+    const playBtn = document.getElementById("playBtn");
 
-        async function loadSongs() {
-            let res = await fetch("/api/songs");
-            songs = await res.json();
-            playlist.innerHTML = "";
-            songs.forEach((s, i) => {
-                let li = document.createElement("li");
-                li.textContent = s.title;
-                li.onclick = () => playSong(i);
-                playlist.appendChild(li);
-            });
-            if (songs.length > 0) playSong(0);
+    let songs = [];
+    let current = 0;
+    let mode = "order";
+    let lyrics = [];
+    let currentItem = null;
+
+    async function loadSongs() {
+      const res = await fetch("api/songs");
+      songs = await res.json();
+      playlist.innerHTML = "";
+      songs.forEach((song, index) => {
+        const item = document.createElement("li");
+        item.textContent = song.title;
+        item.onclick = () => playSong(index);
+        playlist.appendChild(item);
+      });
+      if (songs.length > 0) {
+        await playSong(0, false);
+      } else {
+        lyricsBox.textContent = "No music found. Check MUSIC_DIR.";
+      }
+    }
+
+    async function playSong(index, autoplay = true) {
+      current = index;
+      audio.src = songs[current].file;
+      await loadLyrics(songs[current].lrc);
+      if (autoplay) {
+        await audio.play();
+      }
+      playBtn.textContent = audio.paused ? "Play" : "Pause";
+
+      if (currentItem) currentItem.classList.remove("active");
+      const nextItem = playlist.children[current];
+      if (nextItem) {
+        nextItem.classList.add("active");
+        nextItem.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        currentItem = nextItem;
+      }
+    }
+
+    async function loadLyrics(url) {
+      try {
+        const res = await fetch(url);
+        const text = await res.text();
+        lyrics = parseLRC(text);
+      } catch {
+        lyrics = [];
+      }
+    }
+
+    function parseLRC(text) {
+      const lines = text.split("\n");
+      const result = [];
+      const regex = /\[(\d+):(\d+)(?:\.(\d+))?\](.*)/;
+      lines.forEach((line) => {
+        const match = regex.exec(line);
+        if (match) {
+          const time = parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
+          result.push({ time, text: match[4].trim() });
         }
+      });
+      return result;
+    }
 
-        async function playSong(index) {
-            current = index;
-            audio.src = songs[current].file;
-            await loadLyrics(songs[current].lrc);
-            audio.play();
+    audio.ontimeupdate = () => {
+      const time = Math.floor(audio.currentTime);
+      const line = lyrics.findLast((item) => item.time <= time);
+      if (line) lyricsBox.textContent = line.text;
+    };
 
-            // 播放按钮状态
-            playBtn.textContent = "⏸";
+    audio.onplay = () => playBtn.textContent = "Pause";
+    audio.onpause = () => playBtn.textContent = "Play";
+    audio.onended = () => {
+      if (mode === "order") nextSong();
+      else if (mode === "single") playSong(current);
+      else if (mode === "shuffle") playSong(Math.floor(Math.random() * songs.length));
+    };
 
-            // 高亮当前歌曲
-            if (currentItem) currentItem.classList.remove("active");
-            let newItem = playlist.children[current];
-            newItem.classList.add("active");
-            currentItem = newItem;
+    function togglePlay() { audio.paused ? audio.play() : audio.pause(); }
+    function prevSong() { if (songs.length) playSong((current - 1 + songs.length) % songs.length); }
+    function nextSong() { if (songs.length) playSong((current + 1) % songs.length); }
+    function changeMode(nextMode) { mode = nextMode; }
 
-            // 自动滚动到可见区域
-            newItem.scrollIntoView({ behavior: "smooth", block: "nearest" });
-        }
-
-        async function loadLyrics(url) {
-            try {
-                let res = await fetch(url);
-                let text = await res.text();
-                lyrics = parseLRC(text);
-            } catch (e) {
-                lyrics = [];
-            }
-        }
-
-        function parseLRC(text) {
-            let lines = text.split("\n");
-            let result = [];
-            let regex = /\[(\d+):(\d+)(?:\.(\d+))?\](.*)/;
-            lines.forEach(line => {
-                let m = regex.exec(line);
-                if (m) {
-                    let t = parseInt(m[1]) * 60 + parseInt(m[2]);
-                    result.push({ time: t, text: m[4].trim() });
-                }
-            });
-            return result;
-        }
-
-        audio.ontimeupdate = () => {
-            let t = Math.floor(audio.currentTime);
-            let line = lyrics.findLast(l => l.time <= t);
-            if (line) lyricsBox.textContent = line.text;
-        };
-
-        audio.onplay = () => playBtn.textContent = "⏸";
-        audio.onpause = () => playBtn.textContent = "▶";
-
-        audio.onended = () => {
-            if (mode === "order") nextSong();
-            else if (mode === "single") playSong(current);
-            else if (mode === "shuffle") playSong(Math.floor(Math.random() * songs.length));
-        };
-
-        function togglePlay() { audio.paused ? audio.play() : audio.pause(); }
-        function prevSong() { playSong((current - 1 + songs.length) % songs.length); }
-        function nextSong() { playSong((current + 1) % songs.length); }
-        function changeMode(m) { mode = m; }
-
-        document.getElementById("volume").oninput = e => audio.volume = e.target.value;
-
-        loadSongs();
-    </script>
+    document.getElementById("volume").oninput = (event) => audio.volume = event.target.value;
+    loadSongs();
+  </script>
 </body>
-
 </html>
