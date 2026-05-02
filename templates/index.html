@@ -3,23 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Lihan Web Music Player</title>
+  <title>我的音乐播放器</title>
   <link rel="stylesheet" href="static/style.css">
 </head>
 <body>
   <div class="player">
-    <h1>Lihan Web Music Player</h1>
+    <h1>我的音乐播放器</h1>
     <audio id="audio" controls preload="metadata"></audio>
 
     <div class="controls">
-      <button onclick="prevSong()" title="Previous">Prev</button>
-      <button onclick="togglePlay()" id="playBtn" title="Play/Pause">Play</button>
-      <button onclick="nextSong()" title="Next">Next</button>
+      <button onclick="prevSong()" title="上一首">上一首</button>
+      <button onclick="togglePlay()" id="playBtn" title="播放/暂停">播放</button>
+      <button onclick="nextSong()" title="下一首">下一首</button>
 
       <select id="mode" onchange="changeMode(this.value)">
-        <option value="order">Order</option>
-        <option value="single">Single</option>
-        <option value="shuffle">Shuffle</option>
+        <option value="order">顺序播放</option>
+        <option value="single">单曲循环</option>
+        <option value="shuffle">随机播放</option>
       </select>
 
       <input type="range" id="volume" min="0" max="1" step="0.05" value="1">
@@ -55,7 +55,7 @@
       if (songs.length > 0) {
         await playSong(0, false);
       } else {
-        lyricsBox.textContent = "No music found. Check MUSIC_DIR.";
+        lyricsBox.textContent = "未找到音乐文件，请检查 MUSIC_DIR 或本地 music/musics 目录。";
       }
     }
 
@@ -66,7 +66,7 @@
       if (autoplay) {
         await audio.play();
       }
-      playBtn.textContent = audio.paused ? "Play" : "Pause";
+      playBtn.textContent = audio.paused ? "播放" : "暂停";
 
       if (currentItem) currentItem.classList.remove("active");
       const nextItem = playlist.children[current];
@@ -107,8 +107,8 @@
       if (line) lyricsBox.textContent = line.text;
     };
 
-    audio.onplay = () => playBtn.textContent = "Pause";
-    audio.onpause = () => playBtn.textContent = "Play";
+    audio.onplay = () => playBtn.textContent = "暂停";
+    audio.onpause = () => playBtn.textContent = "播放";
     audio.onended = () => {
       if (mode === "order") nextSong();
       else if (mode === "single") playSong(current);
