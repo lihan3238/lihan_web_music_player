@@ -122,7 +122,7 @@ func protocolMeta() gin.H {
 		"source": gin.H{
 			"repository_url": "https://github.com/lihan3238/lihan_web_music_player",
 			"license":        "MIT",
-			"deploy":         "OPENTOOLHUB_MODE=toolbox MUSIC_DIR=/mnt/c/lihan_work/github_repos/music/musics OPENTOOLHUB_TOOL_ID=<tool-id> OPENTOOLHUB_JWT_SECRET=<runtime-secret> go run .",
+			"deploy":         "OPENTOOLHUB_MODE=toolbox MUSIC_DIR=/mnt/c/lihan_work/github_repos/music/musics OPENTOOLHUB_TOOL_ID=<tool-id> RUNTIME_JWT_SECRET=<runtime-secret> go run .",
 			"directory":      ".",
 		},
 		"auth": gin.H{
@@ -231,6 +231,10 @@ func requirePlatformJWT() gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"message": "runtime token tool mismatch"})
 			return
 		}
+		if !hasAnyScope(claims.Scope, "validate", "web_app") {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"message": "runtime token scope mismatch"})
+			return
+		}
 		if claims.ExpiresAt < time.Now().Unix() {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"message": "runtime token expired"})
 			return
@@ -263,6 +267,17 @@ func sign(value string) string {
 	mac := hmac.New(sha256.New, []byte(appConfig.JWTSecret))
 	mac.Write([]byte(value))
 	return base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
+}
+
+func hasAnyScope(scopes []string, allowed ...string) bool {
+	for _, scope := range scopes {
+		for _, candidate := range allowed {
+			if scope == candidate {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 type errString string
