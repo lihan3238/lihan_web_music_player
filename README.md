@@ -1,175 +1,194 @@
-# lihan_web_music_player 🎶
+# lihan_web_music_player
 
-![Go](https://img.shields.io/badge/Go-1.20-blue.svg)
-![License](https://img.shields.io/badge/License-MIT-green.svg)
-![GitHub last commit](https://img.shields.io/github/last-commit/lihan3238/lihan_web_music_player)
+一个基于 Go + Gin 的本地音乐播放器，支持本地曲库、歌词显示、音频 Range 请求，并可作为 OpenToolHub Tool Protocol v3 的真实 WEB_APP 验收工具运行。
 
-![cover](static/cover.png)
+## 功能
 
-一款基于 **Golang + Gin** 的简洁在线音乐播放器，支持本地音乐播放与歌词显示，具备现代化 UI 和浮动歌词字幕效果。
+- 播放本地音乐文件：`mp3`、`m4a`、`mp4`、`ogg`、`wav`、`flac`
+- 自动加载同名歌词文件：`.lrc`、`.txt`
+- 支持顺序播放、单曲循环、随机播放
+- 支持音量调节和当前歌曲高亮
+- 支持多个音乐目录合并扫描：`music/`、`musics/`、`MUSIC_DIR`
+- 使用 `http.ServeFile` 提供音频文件，支持浏览器 Range 请求
+- 支持两种运行模式：
+  - `standalone`：原始独立播放器模式，可直接访问
+  - `toolbox`：OpenToolHub 接入模式，业务页面、API、静态资源和音乐资源需要平台 JWT 才能访问
 
----
-
-## ✨ 功能 Features
-
-- 🎵 播放本地音乐文件（`mp3 / m4a / mp4 / ogg / wav / flac`）
-- 📝 自动加载同名歌词文件（`.lrc / .txt`），支持浮动字幕
-- 🔁 播放模式切换：顺序播放 / 单曲循环 / 随机播放
-- 🔊 音量调节
-- 🎨 深色简洁 UI，歌单滚动条与交互效果优化
-- ✨ 当前播放高亮、鼠标悬停与点击反馈
-- 📂 **支持多个音乐目录（`music/ + musics/` 并集）**
-- 🚀 **支持自定义启动端口（环境变量 / 启动参数）**
-
----
-
-## 📦 安装 Installation
-
-### 1️⃣ 克隆仓库
+## 快速开始
 
 ```bash
 git clone https://github.com/lihan3238/lihan_web_music_player.git
 cd lihan_web_music_player
-````
-
----
-
-### 2️⃣ 安装依赖
-
-```bash
 go mod tidy
-```
-
----
-
-### 3️⃣ 准备音乐文件
-
-支持 **多个音乐目录并集**：
-
-* `music/`
-* `musics/`
-
-任意一个或两个同时存在均可，程序会自动合并扫描。
-
-#### 方式一：直接放文件（推荐）
-
-```text
-music/
-├─ song1.mp3
-├─ song1.lrc
-├─ song2.mp3
-```
-
-```text
-musics/
-├─ song3.mp3
-├─ song3.lrc
-```
-
-#### 方式二：Windows 使用符号链接（可选）
-
-```bat
-mklink /D musics D:\Your\Music\Folder
-```
-
-> ⚠️ 注意
->
-> * `music/`、`musics/` 均应加入 `.gitignore`
-> * 仅作为 **本地资源目录**，不参与版本控制
-
----
-
-## ▶️ 运行 Run
-
-### 默认启动（端口 8080）
-
-```bash
-go run main.go
+go run .
 ```
 
 访问：
 
-```
+```text
 http://localhost:8080
 ```
 
----
+## 曲库目录
 
-### 自定义端口（三种方式）
+默认会扫描：
 
-#### ✅ 方式一：命令行参数（优先级最高）
+```text
+music/
+musics/
+```
+
+也可以通过 `MUSIC_DIR` 指定外部曲库：
 
 ```bash
-go run main.go -port 9000
+MUSIC_DIR=/path/to/musics go run .
 ```
 
-#### ✅ 方式二：环境变量
+Windows PowerShell：
+
+```powershell
+$env:MUSIC_DIR="C:\lihan_work\github_repos\music\musics"
+go run .
+```
+
+如果要配置多个目录，使用系统路径分隔符：
+
+- Windows：`;`
+- Linux/macOS：`:`
+
+## 端口配置
+
+默认端口是 `8080`。
+
+命令行参数：
 
 ```bash
-# PowerShell
-$env:PORT=9000
-go run main.go
+go run . -port 9000
 ```
+
+环境变量：
 
 ```bash
-# macOS / Linux
-PORT=9000 go run main.go
+PORT=9000 go run .
 ```
 
-#### ✅ 优先级规则
+优先级：
 
+```text
+命令行参数 -port > 环境变量 PORT > 默认值 8080
 ```
-启动参数 (-port) > 环境变量 (PORT) > 默认值 (8080)
+
+## OpenToolHub Tool Protocol v3 接入
+
+本项目可以作为 OpenToolHub 的真实 WEB_APP 工具运行，用来验证平台的 v3 协议能力。
+
+### 协议端点
+
+公开端点：
+
+```text
+GET /health
+GET /meta
 ```
 
----
+`/meta` 返回：
 
-## 🎧 使用 Usage
+- `protocol_version: opentoolhub.tool.v3`
+- `tool_type: WEB_APP`
+- `source.repository_url`
+- `source.license`
+- `source.deploy`
+- `auth.type: platform_jwt`
+- `validation.web_probe_paths`
 
-* 点击歌单中的歌曲开始播放
-* 控制按钮：上一首 / 播放 / 暂停 / 下一首
-* 播放模式选择：顺序 / 单曲循环 / 随机
-* 使用音量滑块调整音量
-* 歌词自动匹配并显示（若存在）
+toolbox 模式下受保护端点：
 
----
+```text
+GET /
+GET /static/*
+GET /api/songs
+GET /api/lyrics/:name
+GET /music/:file
+```
 
-## 📁 项目结构 Project Structure
+这些端点必须通过 OpenToolHub 代理访问。直接无 token 访问会返回 `401` 或 `403`。
+
+### toolbox 模式启动
+
+Windows PowerShell 示例：
+
+```powershell
+$env:PORT="18080"
+$env:OPENTOOLHUB_MODE="toolbox"
+$env:OPENTOOLHUB_TOOL_ID="<OpenToolHub 中的工具 ID>"
+$env:OPENTOOLHUB_ISSUER="opentoolhub"
+$env:OPENTOOLHUB_AUDIENCE="opentoolhub-runtime"
+$env:OPENTOOLHUB_JWT_SECRET="<与 OpenToolHub RUNTIME_JWT_SECRET 一致的密钥>"
+$env:MUSIC_DIR="C:\lihan_work\github_repos\music\musics"
+go run .
+```
+
+WSL/Linux 示例：
+
+```bash
+PORT=18080 \
+OPENTOOLHUB_MODE=toolbox \
+OPENTOOLHUB_TOOL_ID="<OpenToolHub 中的工具 ID>" \
+OPENTOOLHUB_ISSUER=opentoolhub \
+OPENTOOLHUB_AUDIENCE=opentoolhub-runtime \
+OPENTOOLHUB_JWT_SECRET="<与 OpenToolHub RUNTIME_JWT_SECRET 一致的密钥>" \
+MUSIC_DIR=/mnt/c/lihan_work/github_repos/music/musics \
+go run .
+```
+
+### OpenToolHub 登记信息
+
+在 OpenToolHub 开发者中心登记：
+
+```text
+工具类型：WEB_APP
+Runtime URL：http://localhost:18080
+源码仓库：https://github.com/lihan3238/lihan_web_music_player
+许可证：MIT
+部署说明：使用 OPENTOOLHUB_MODE=toolbox 启动，并配置 MUSIC_DIR 与 OPENTOOLHUB_JWT_SECRET
+```
+
+完成校验和激活后，从 OpenToolHub 市场详情页打开工具。浏览器 URL 应保持在 OpenToolHub 站内，例如：
+
+```text
+http://localhost:3000/tools/<tool-id>/app
+```
+
+播放器页面、歌曲列表、歌词和音频文件都应通过 OpenToolHub 反向代理访问。
+
+## 本地验证
+
+```bash
+go test ./...
+go build ./...
+```
+
+toolbox 模式下建议额外验证：
+
+- 无 token 请求 `/api/songs` 应失败
+- 带 OpenToolHub runtime JWT 请求 `/api/songs` 应成功
+- 带 `Range: bytes=0-3` 请求 `/music/:file` 应返回 `206 Partial Content`
+
+## 项目结构
 
 ```text
 lihan_web_music_player/
-├─ main.go            # 后端主程序（Gin）
-├─ templates/
-│  └─ index.html      # 前端页面
-├─ static/
-│  ├─ style.css       # 样式文件
-│  └─ cover.png       # 项目封面截图
-├─ music/             # 本地音乐目录（.gitignore）
-├─ musics/            # 本地音乐目录 / 符号链接（.gitignore）
-└─ README.md
+├── main.go
+├── templates/
+│   └── index.html
+├── static/
+│   ├── style.css
+│   └── cover.png
+├── music/
+├── musics/
+└── README.md
 ```
 
----
-
-## 🛠️ 技术说明 Notes
-
-* 后端使用 `http.ServeFile`，天然支持 **Range 请求（断点续传）**
-* 音频文件存在性判断使用 `os.Stat`，避免大文件读入内存
-* 歌词文件自动尝试多目录 + 多扩展名
-* 目录扫描结果做去重处理（按歌曲名）
-
----
-
-## 🤝 贡献 Contributing
-
-欢迎提交 Issue 或 Pull Request，用于：
-
-* 新功能（歌单 / 搜索 / 分类）
-* UI / UX 优化
-* 性能或结构改进
-
----
-
-## 📄 License
+## License
 
 MIT License
